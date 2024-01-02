@@ -1,0 +1,2 @@
+Type,AlertRuleName,Subscription,ResourceGroup,Severity,Subscription_User,ResourceGroup_User,ResourceName,Metric,Operator,Aggregation,Threshold,WindowSize,EvaluationFrequency,ActionGroupName_1
+Static,<Rule name>,<Subscription name>,<Resource group name>,1,none,none,<Taget resource name>,<Metric name>,GreaterThanOrEqual,Average,90,5m,1m,<Action group name_1>
