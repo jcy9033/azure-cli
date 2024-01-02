@@ -1,5 +1,5 @@
 # Please enter the file path for the CSV
-$csvPath = ""
+$csvPath = "C:\Users\cchi9\OneDrive\Document\Azure DX Projects\CSV\Azure_LogQuery_Alerts.csv"
 
 $csvData = Import-Csv $csvPath -Encoding UTF8
 
@@ -20,7 +20,7 @@ $csvData | ForEach-Object {
   
   #----------------------------------------- Action Group
   
-  $ActionParams = @()
+  $ActionGroups = @()
   $i = 1
   while ($true) {
     $ActionGroupNameProperty = "ActionGroupName_$i"
@@ -32,7 +32,7 @@ $csvData | ForEach-Object {
       
       if ($ActionGroupJson.data -and $ActionGroupJson.data.Count -gt 0) {
         $ActionGroupId = $ActionGroupJson.data[0].id
-        $ActionParams += "--action", "$ActionGroupId"
+        $ActionGroups += "$ActionGroupId"
       }
       else {
         Write-Host "---> No valid action group ID found for $ActionGroupName"
@@ -76,6 +76,6 @@ $csvData | ForEach-Object {
     --auto-mitigate $_.AutoMitigate `
     --window-size $_.WindowSize `
     --location $_.Location `
-    $ActionParams
+    --action-group $ActionGroups
 }
 

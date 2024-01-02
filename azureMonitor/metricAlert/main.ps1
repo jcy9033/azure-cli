@@ -1,5 +1,5 @@
 # Please enter the file path for the CSV
-$csvPath = "C:\Users\cchi9\OneDrive\Document\Azure DX Projects\CSV\main.csv"
+$csvPath = ""
 
 $csvData = Import-Csv $csvPath -Encoding UTF8
 
