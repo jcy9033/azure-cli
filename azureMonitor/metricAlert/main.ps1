@@ -1,5 +1,5 @@
 # Please enter the file path for the CSV
-$csvPath = ""
+$csvPath = "C:\Users\cchi9\OneDrive\Document\Azure DX Projects\CSV\main.csv"
 
 $csvData = Import-Csv $csvPath -Encoding UTF8
 
@@ -11,11 +11,11 @@ $csvData | ForEach-Object {
   $ActiveSubscription = az account show --query name -o tsv
 
   if ($ActiveSubscription -eq $TargetSubscription) {
-    Write-Host "---> Already on the target subscription: $TargetSubscription `n"
+    Write-Host "---> Already on the target subscription: $TargetSubscription"
   }
   else {
     az account set --subscription $TargetSubscription
-    Write-Host "---> Switched to the target subscription: $TargetSubscription `n"
+    Write-Host "---> Switched to the target subscription: $TargetSubscription"
   }
   
   #----------------------------------------- Action Group
