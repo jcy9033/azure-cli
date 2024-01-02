@@ -20,7 +20,7 @@ $csvData | ForEach-Object {
   
   #----------------------------------------- Action Group
   
-  $ActionParams = @()
+  $ActionGroups = @()
   $i = 1
   while ($true) {
     $ActionGroupNameProperty = "ActionGroupName_$i"
@@ -32,7 +32,7 @@ $csvData | ForEach-Object {
       
       if ($ActionGroupJson.data -and $ActionGroupJson.data.Count -gt 0) {
         $ActionGroupId = $ActionGroupJson.data[0].id
-        $ActionParams += "--action", "$ActionGroupId"
+        $ActionGroups += "--action", "$ActionGroupId"
       }
       else {
         Write-Host "---> No valid action group ID found for $ActionGroupName"
@@ -70,7 +70,7 @@ $csvData | ForEach-Object {
   az monitor metrics alert create --name $_.AlertRuleName --resource-group $_.ResourceGroup --scopes $Scopes `
     --severity $_.Severity `
     --condition $Condition `
-    $ActionParams `
+    $ActionGroups `
     --auto-mitigate true `
     --evaluation-frequency $_.EvaluationFrequency `
     --window-size $_.WindowSize
