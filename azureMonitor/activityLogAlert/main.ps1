@@ -4,48 +4,49 @@ $csvPath = "C:\Users\cchi9\OneDrive\Document\Azure DX Projects\CSV\Azure_Activit
 
 $csvData = Import-Csv $csvPath -Encoding UTF8
 
+$i = 1
+
 $csvData | ForEach-Object {
   
   #----------------------------------------- Subscription check
   
+  Write-Host "----------# [Create No.$i : $(Get-Date)]"
+
   $TargetSubscription = $_.Subscription
+  
   $ActiveSubscription = az account show --query name -o tsv
   
   if ($ActiveSubscription -eq $TargetSubscription) {
-    Write-Host "---> Already on the target subscription: $TargetSubscription"
+    Write-Host "[Info] Already on the target subscription: $TargetSubscription"
   }
   else {
     az account set --subscription $TargetSubscription
-    Write-Host "---> Switched to the target subscription: $TargetSubscription"
+    Write-Host "[Info] Switched to the target subscription: $TargetSubscription"
   }
   
   #----------------------------------------- Action Group
+
+  $ActionGroupName = $_.ActionGroupName
+
+  $ActionGroupList = $ActionGroupName -split ';'
   
+  Write-Host "[Info] Action group list: $ActionGroupList"
+
   $ActionGroups = @()
-  $i = 1
-  while ($true) {
-    $ActionGroupNameProperty = "ActionGroupName_$i"
   
-    if ($_.PSObject.Properties.Name -contains $ActionGroupNameProperty) {
-      $ActionGroupName = $_.$ActionGroupNameProperty
-      Write-Host "---> ActionGroupName_$i is set to: $ActionGroupName"
-      $ActionGroupJson = az graph query -q "Resources | where type == 'microsoft.insights/actiongroups' and name has '$ActionGroupName' | project id" | ConvertFrom-Json
+  foreach ($ActionGroup in $ActionGroupList) {
+    $ActionGroupJson = az graph query -q "Resources | where type == 'microsoft.insights/actiongroups' and name has '$ActionGroup' | project id" | ConvertFrom-Json
   
-      if ($ActionGroupJson.data -and $ActionGroupJson.data.Count -gt 0) {
-        $ActionGroupId = $ActionGroupJson.data[0].id
-        $ActionGroups += "$ActionGroupId"
-      }
-      else {
-        Write-Host "---> No valid action group ID found for $ActionGroupName"
-        break
-      }
+    if ($ActionGroupJson.data -and $ActionGroupJson.data.Count -gt 0) {
+      $ActionGroupId = $ActionGroupJson.data[0].id
+      $ActionGroups += "$ActionGroupId"
     }
     else {
-      Write-Host "---> No more action groups to process for this object."
-      break
+      Write-Host "[Warning] No valid action group ID found for $ActionGroup"
     }
-    $i++
   }
+
+  Write-Host "[Info] Action groups parameter: $ActionGroups"
 
   #----------------------------------------- Event status conditions
 
@@ -64,7 +65,7 @@ $csvData | ForEach-Object {
   # Join the condition array with ' and '
   $eventConditionString = $eventConditionArray -join " and "
 
-  Write-Host "---> Event status: $eventConditionString"
+  Write-Host "[Info] Event status: $eventConditionString"
 
   #----------------------------------------- Current resource status conditions
 
@@ -87,25 +88,27 @@ $csvData | ForEach-Object {
   $currentResourceConditionString = $currentResourceConditionArray -join " and "
 
   # Output the condition string
-  Write-Host "---> Current resource status: $currentResourceConditionString"
+  Write-Host "[Info] Current resource status: $currentResourceConditionString"
 
-
-  
   #----------------------------------------- Resource parameters
 
   $ResourceName = $_.ResourceName
 
   $ResourceType = (az resource list --query "[?name=='$ResourceName'].type" --output tsv).Trim()
 
-  Write-Host "---> Resource type: $ResourceType"
+  Write-Host "[Info] Resource type: $ResourceType"
 
   $ResourceId = (az resource list --query "[?name=='$ResourceName'].id" --output tsv).Trim()
 
-  Write-Host "---> Resource scope: $ResourceId"
+  Write-Host "[Info] Resource scope: $ResourceId"
 
   #----------------------------------------- Create activity log alert
   
   az monitor activity-log alert create --name $_.AlertRuleName --resource-group $_.ResourceGroup  `
-    --condition "category=ResourceHealth and $currentResourceConditionString and $eventConditionString and resourceType=$ResourceType and resourceId=$ResourceId" `
+    --condition "category=ResourceHealth and $eventConditionString and $currentResourceConditionString and resourceType=$ResourceType and resourceId=$ResourceId" `
     --action-group $ActionGroups
+  
+  $i++  
 }
+
+Write-Host "----------# [All done: $(Get-Date)]"
