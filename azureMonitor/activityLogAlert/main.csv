@@ -1,0 +1,2 @@
+AlertRuleName,Subscription,ResourceGroup,Subscription_User,ResourceGroup_User,ResourceName,EventStatus,CurrentResourceStatus,PreviousResourceStatus,ReasonType,ActionGroupName
+alert-1,Azure subscription 2,system-1,n/a,n/a,AZRWIN-1,Active,Unavailable;Degraded,All,All,ag-1;ag-2;ag-3

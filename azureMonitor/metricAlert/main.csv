@@ -1,0 +1,2 @@
+Type,AlertRuleName,Subscription,ResourceGroup,Severity,Subscription_User,ResourceGroup_User,ResourceName,Metric,Operator,Aggregation,Threshold,WindowSize,EvaluationFrequency,ActionGroupName
+Static,alert-1,Azure subscription 2,system-1,1,none,none,AZRWIN-1,Percentage CPU,GreaterThanOrEqual,Average,90,5m,1m,ag-1;ag-2;ag-3

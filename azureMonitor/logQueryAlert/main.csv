@@ -1,0 +1,2 @@
+AlertRuleName,Subscription,ResourceGroup,Severity,Subscription_User,ResourceGroup_User,ResourceName,LogQuery,Measure,AggregationType,WindowSize,Dimensions ,Operator,Threshold,EvaluationFrequency,AutoMitigate,Location,ActionGroupName
+alert-1,Azure subscription 2,system-1,1,n/a,n/a,AZRWIN-1,"Perf | where CounterName == '% Committed Bytes In Use' | where Computer == 'PA-IOTGR-DB01' | summarize arg_max(TimeGenerated, *) by InstanceName | project CounterValue",CounterValue,avg,5m,FALSE,>,90,5m,TRUE,japaneast,ag-1;ag-2;ag-3
