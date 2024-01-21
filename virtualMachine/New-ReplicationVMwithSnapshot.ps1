@@ -5,7 +5,7 @@ $vm_name = "azrwin-1"
 # Replication resource variable
 $location = "japaneast" 
 $rep_rg_name = "system-2"
-$rep_vm_names = @("azrwin-2")
+$rep_vm_names = @("azrwin-2", "azrwin-3")
 $rep_vm_size = "Standard_DS1_v2"
 $rep_disk_sku = "StandardSSD_LRS"
 $rep_disk_size = 4
