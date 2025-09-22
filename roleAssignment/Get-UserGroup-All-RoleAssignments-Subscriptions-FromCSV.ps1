@@ -96,8 +96,13 @@ foreach ($azureSubscriptionId in $azureSubscriptionIdList) {
   if ($roleAssignments) {
     $enrichedRoleAssignments = $roleAssignments | ForEach-Object {
       [pscustomobject]@{
-        RoleAssignmentId   = $_.RoleAssignmentId
-        SubscriptionName   = if ($subscriptionIdFromScope -and $azureSubscriptionIdToNameMap.ContainsKey($subscriptionIdFromScope)) { $azureSubscriptionIdToNameMap[$subscriptionIdFromScope] } else { "" }
+        RoleAssignmentId   = $_.RoleAssignmentName
+        SubscriptionName   = if ($azureSubscriptionIdToNameMap.ContainsKey($azureSubscriptionId)) { 
+          $azureSubscriptionIdToNameMap[$azureSubscriptionId] 
+        }
+        else { 
+          "" 
+        }
         SubscriptionId     = $azureSubscriptionId
         PrincipalName      = $_.DisplayName
         PrincipalObjectId  = $_.ObjectId
