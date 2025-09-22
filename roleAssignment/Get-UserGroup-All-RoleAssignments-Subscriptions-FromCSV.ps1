@@ -82,14 +82,14 @@ foreach ($azureSubscriptionId in $azureSubscriptionIdList) {
 
   try {
     # 구독 컨텍스트(Active Subscription) 설정
-    Set-AzContext -SubscriptionId $azureSubscriptionId | Out-Null
-
+    Set-AzContext -SubscriptionId $azureSubscriptionId -ErrorAction Stop | Out-Null
+    
     # 역할 할당 전체 조회 (상속 포함)
     # 역할 할당 ID를 가져오기 위해 Get-AzRoleAssignment 사용
-    $roleAssignments = Get-AzRoleAssignment -IncludeClassicAdministrators
+    $roleAssignments = Get-AzRoleAssignment -IncludeClassicAdministrators -ErrorAction Stop
   }
   catch {
-    Write-LogMessage "Failed to retrieve role assignments for: $azureSubscriptionId - $($_.Exception.Message)"
+    Write-LogMessage "Failed processing subscription: $azureSubscriptionId - $($_.Exception.Message)"
     continue
   }
 

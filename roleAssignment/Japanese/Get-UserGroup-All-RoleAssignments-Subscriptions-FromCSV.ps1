@@ -81,14 +81,15 @@ foreach ($azureSubscriptionId in $azureSubscriptionIdList) {
   Write-LogMessage "Processing subscription from CSV: $azureSubscriptionId"
 
   try {
-    # サブスクリプションのコンテキスト（Active Subscription）を設定
-    Set-AzContext -SubscriptionId $azureSubscriptionId | Out-Null
-
-    # ロール割り当てを全件取得（継承分も含む）ロール割り当てIDを取得するため、Get-AzRoleAssignmentコマンドを使用
-    $roleAssignments = Get-AzRoleAssignment -IncludeClassicAdministrators
+    # サブスクリプションのコンテキスト（アクティブサブスクリプション）を設定
+    Set-AzContext -SubscriptionId $azureSubscriptionId -ErrorAction Stop | Out-Null
+    
+    # ロール割り当てを全件取得（継承分も含む）
+    # ロール割り当てIDを取得するために Get-AzRoleAssignment を使用
+    $roleAssignments = Get-AzRoleAssignment -IncludeClassicAdministrators -ErrorAction Stop
   }
   catch {
-    Write-LogMessage "Failed to retrieve role assignments for: $azureSubscriptionId - $($_.Exception.Message)"
+    Write-LogMessage "Failed processing subscription: $azureSubscriptionId - $($_.Exception.Message)"
     continue
   }
 
