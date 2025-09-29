@@ -81,11 +81,8 @@ if (-not $inputRows -or $inputRows.Count -eq 0) {
 }
 
 # [ADD] ----------------------------------------------------------------
-# 실행별 보관 디렉토리 생성 (CSV와 같은 폴더 하위에 run.delete.<stamp>)
-# 기존 변수/로직 변경 없이, 생성과 경로 재할당만 수행
-$__baseDir = Split-Path -Parent $CsvFilePath
-if (-not $__baseDir -or $__baseDir -eq "") { $__baseDir = $PSScriptRoot }
-$RunOutputDir = Join-Path $__baseDir ("run.delete." + $stamp)
+# 실행별 보관 디렉토리 생성 (홈 디렉터리 하위에 run.backout.<stamp>)
+$RunOutputDir = Join-Path $HOME ("run.backout." + $stamp)
 New-Item -ItemType Directory -Path $RunOutputDir -Force | Out-Null
 
 # 로그 파일을 보관 디렉토리로 이동(경로만 재지정; 기존 변수명/함수 변경 없음)
@@ -139,11 +136,15 @@ for ($i = 0; $i -lt $totalRows; $i++) {
   # 실행 메타데이터
   $executedAt = [System.TimeZoneInfo]::ConvertTime((Get-Date), $jpTimeZone).ToString("o")  # JST, ISO8601
   $startTime = Get-Date  # 경과 시간 계산용(UTC/JST 상관 없음)
+  $stdAll = $null
+  $exitCode = $null
+  $result = $null
 
   # 스코프가 리소스 그룹이면 --resource-group 사용
   # 예: /subscriptions/<subId>/resourceGroups/<rgName>
   $useRgParam = $false
   $rgName = $null
+  
   if ($scope -match '^/subscriptions/[^/]+/resourceGroups/([^/]+)/*$') {
     $useRgParam = $true
     $rgName = $Matches[1]
@@ -159,9 +160,6 @@ for ($i = 0; $i -lt $totalRows; $i++) {
     $commandToRun = "az role assignment delete --assignee `"$PrincipalObjectId`" --role `"$roleDefinitionName`" --scope `"$scope`" --subscription $subscriptionId"
   }
 
-  $stdAll = $null
-  $exitCode = $null
-  $result = $null
 
   if ($EnableWhatIf) {
     # WhatIf 모드: 실제 실행하지 않음
@@ -193,12 +191,21 @@ for ($i = 0; $i -lt $totalRows; $i++) {
   foreach ($col in $row.PSObject.Properties.Name) {
     $rowWithResult | Add-Member -NotePropertyName $col -NotePropertyValue $row.$col
   }
-  $rowWithResult | Add-Member -NotePropertyName ExecutedAt  -NotePropertyValue $executedAt
-  $rowWithResult | Add-Member -NotePropertyName DurationMs  -NotePropertyValue $durationMs
-  $rowWithResult | Add-Member -NotePropertyName Result      -NotePropertyValue $result
-  $rowWithResult | Add-Member -NotePropertyName ExitCode    -NotePropertyValue $exitCode
-  $rowWithResult | Add-Member -NotePropertyName CommandLine -NotePropertyValue $commandToRun
-  $rowWithResult | Add-Member -NotePropertyName StdAll      -NotePropertyValue ($stdAll -join "`n")
+
+  # 추가할 결과 컬럼 정의 (항상 덮어쓰기)
+  $extraColumns = @(
+    @{ Name = "ExecutedAt"; Value = $executedAt },
+    @{ Name = "DurationMs"; Value = $durationMs },
+    @{ Name = "Result"; Value = $result },
+    @{ Name = "ExitCode"; Value = $exitCode },
+    @{ Name = "CommandLine"; Value = $commandToRun },
+    @{ Name = "StdAll"; Value = ($stdAll -join "`n") }
+  )
+
+  foreach ($colDef in $extraColumns) {
+    # 덮어쓰기 모드: 기존 속성이 있든 없든 무조건 갱신
+    $rowWithResult | Add-Member -NotePropertyName $colDef.Name -NotePropertyValue $colDef.Value -Force
+  }
 
   # 누적
   $rowsWithResults += $rowWithResult

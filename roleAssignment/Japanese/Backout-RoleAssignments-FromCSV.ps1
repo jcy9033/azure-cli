@@ -80,10 +80,8 @@ if (-not $inputRows -or $inputRows.Count -eq 0) {
 }
 
 # [ADD] ----------------------------------------------------------------
-# 実行ごとに保存ディレクトリを作成（CSVと同じフォルダ下に run.backout.<stamp>）
-$__baseDir = Split-Path -Parent $CsvFilePath
-if (-not $__baseDir -or $__baseDir -eq "") { $__baseDir = $PSScriptRoot }
-$RunOutputDir = Join-Path $__baseDir ("run.backout." + $stamp)
+# 実行ごとに保存ディレクトリを作成（ホームディレクトリ下に run.delete.<stamp>）
+$RunOutputDir = Join-Path $HOME ("run.backout." + $stamp)
 New-Item -ItemType Directory -Path $RunOutputDir -Force | Out-Null
 
 # ログファイルを保存ディレクトリに移動（パスのみ再指定、変数名/関数は変更なし）
@@ -137,13 +135,13 @@ for ($i = 0; $i -lt $totalRows; $i++) {
   # 実行メタデータ
   $executedAt = [System.TimeZoneInfo]::ConvertTime((Get-Date), $jpTimeZone).ToString("o")  # JST, ISO8601
   $startTime = Get-Date  # 経過時間計算用
+  $stdAll = $null
+  $exitCode = $null
+  $result = $null
 
   # 実行するAzure CLIコマンド
   $commandToRun = "az role assignment create --assignee `"$PrincipalObjectId`" --role `"$roleDefinitionName`" --scope `"$scope`" --subscription $subscriptionId"
 
-  $stdAll = $null
-  $exitCode = $null
-  $result = $null
 
   if ($EnableWhatIf) {
     # WhatIfモード：実際には実行しない
@@ -170,19 +168,28 @@ for ($i = 0; $i -lt $totalRows; $i++) {
   # 実行時間（ms）
   $durationMs = [int]((Get-Date) - $startTime).TotalMilliseconds
 
-  # 元の行＋実行結果カラムを結合した新しいオブジェクトを作成
+  # 追加する結果カラム定義（常に上書き）
   $rowWithResult = [pscustomobject]@{}
   foreach ($col in $row.PSObject.Properties.Name) {
     $rowWithResult | Add-Member -NotePropertyName $col -NotePropertyValue $row.$col
   }
-  $rowWithResult | Add-Member -NotePropertyName ExecutedAt  -NotePropertyValue $executedAt
-  $rowWithResult | Add-Member -NotePropertyName DurationMs  -NotePropertyValue $durationMs
-  $rowWithResult | Add-Member -NotePropertyName Result      -NotePropertyValue $result
-  $rowWithResult | Add-Member -NotePropertyName ExitCode    -NotePropertyValue $exitCode
-  $rowWithResult | Add-Member -NotePropertyName CommandLine -NotePropertyValue $commandToRun
-  $rowWithResult | Add-Member -NotePropertyName StdAll      -NotePropertyValue ($stdAll -join "`n")
+  
+# 追加する結果カラム定義（常に上書き）														
+  $extraColumns = @(
+    @{ Name = "ExecutedAt"; Value = $executedAt },
+    @{ Name = "DurationMs"; Value = $durationMs },
+    @{ Name = "Result"; Value = $result },
+    @{ Name = "ExitCode"; Value = $exitCode },
+    @{ Name = "CommandLine"; Value = $commandToRun },
+    @{ Name = "StdAll"; Value = ($stdAll -join "`n") }
+  )
 
-  # 蓄積
+  foreach ($colDef in $extraColumns) {
+    # 上書きモード: 既存プロパティの有無に関わらず必ず更新
+    $rowWithResult | Add-Member -NotePropertyName $colDef.Name -NotePropertyValue $colDef.Value -Force
+  }
+
+  # 累積
   $rowsWithResults += $rowWithResult
 }
 
